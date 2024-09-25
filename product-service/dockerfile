@@ -1,26 +1,14 @@
 # Use an official OpenJDK runtime as a parent image
-FROM openjdk:11-jdk-slim
+FROM openjdk:17-jdk-alpine
 
-# Set the working directory in the container
-WORKDIR /app
+# Set ARG for the jar file
+ARG JAR_FILE=target/*.jar
 
-# Copy the Maven project file
-COPY pom.xml .
+# Copy the jar file into the container
+COPY ${JAR_FILE} app.jar
 
-# Copy the source code
-COPY src ./src
+# Copy the application.properties file
+COPY src/main/resources/application.properties /application.properties
 
-# Install Maven
-RUN apt-get update && \
-    apt-get install -y maven
-
-# Build the application
-RUN mvn package -DskipTests
-
-# Expose the port the app runs on
-EXPOSE 8080
-
-# Run the jar file
-CMD ["java", "-jar", "target/$(cat jarname.txt)"]
-
-
+# Run the jar file and specify the location of the properties file
+ENTRYPOINT ["java","-jar","/app.jar","--spring.config.location=file:/application.properties"]
