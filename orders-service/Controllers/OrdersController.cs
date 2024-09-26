@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using OrdersService.Data;
 using OrdersService.Models;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,32 +11,46 @@ namespace OrdersService.Controller
     [Route("api/[controller]")]
     public class OrdersController : ControllerBase
     {
-        public static OrderItem itemTest = new OrderItem {OrderItemId=1, ProductId=1, Quantity=1, UnitPrice=599, ProductName="Product 1"};
-        private static readonly List<Order> Orders = new List<Order>() {
-            new Order {OrderId=1, OrderDate=DateTime.Now, Status=OrderStatus.Delivered, CustomerName="John Doe", CustomerEmail="john@email.com", TotalAmount=599, OrderItems= new List<OrderItem>{itemTest}}
-        };
+        private readonly OrdersContext _context;
+        
+        
+
+
+        public OrdersController(OrdersContext context)
+        {
+            _context = context;
+        }
 
         [HttpGet]
-        public ActionResult<IEnumerable<Order>> GetOrders()
+        public async Task<ActionResult<List<Order>>> GetOrders()
         {
-            return Ok(Orders);
+            var stuff = await _context.Orders.ToListAsync();
+            return  Ok(stuff);
         }
 
         [HttpGet("{id}")]
-        public ActionResult<Order> GetOrderById(int id)
+        public async Task<ActionResult<Order>> GetOrderById(int id)
         {
-            return Ok(Orders.FirstOrDefault(o => o.OrderId == id));
+            var order = await _context.Orders.FindAsync(id);
+
+            if (order == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(order);
         }
     
         [HttpPost]
-        public ActionResult<Order> CreateOrder(Order order)
+        public async Task<ActionResult<Order>> CreateOrder(Order order)
         {
-            order.OrderId = Orders.Count + 1;
-            Orders.Add(order);
+            _context.Orders.Add(order);
+            await _context.SaveChangesAsync();
+            
             return Ok(order);
         }
 
-        [HttpPut("{id}")]
+        /*[HttpPut("{id}")]
         public ActionResult<Order> UpdateOrder(int id, Order order)
         {
             var existingOrder = Orders.FirstOrDefault(o => o.OrderId == id);
@@ -61,7 +77,7 @@ namespace OrdersService.Controller
             }
             Orders.Remove(order);
             return NoContent();
-        }
+        }*/
     }
 
    
